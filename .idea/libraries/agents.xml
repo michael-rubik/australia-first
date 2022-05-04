@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="agents">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/agents/sge-mctsagent-1.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/agents/sge-randomagent-1.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/agents/sge-alphabetaagent-1.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/agents/RiskAgent-1.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
