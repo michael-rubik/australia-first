@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="pss-risk-master">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/src/pss-risk-master.zip!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
