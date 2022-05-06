@@ -52,7 +52,7 @@ public class RiskAgent extends AbstractGameAgent<Risk, RiskAction> implements
     //returns the next possible actions
     Set<RiskAction> possibleActions = game.getPossibleActions();
 
-    //gready search for the next best move
+    //greedy search for the next best move
     double bestUtilityValue = Double.NEGATIVE_INFINITY;
     double bestHeuristicValue = Double.NEGATIVE_INFINITY;
     RiskAction bestAction = null;
