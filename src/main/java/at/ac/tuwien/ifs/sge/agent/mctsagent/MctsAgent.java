@@ -14,10 +14,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> implements
-    GameAgent<G, A> {
-
-
+public class MctsAgent//<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> implements
+    //GameAgent<G, A> {
+{
+/*
   private static final int MAX_PRINT_THRESHOLD = 97;
   private static int INSTANCE_NR_COUNTER = 1;
 
@@ -291,5 +291,5 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
       return String.format("%s%d", "MctsAgent#", instanceNr);
     }
     return "MctsAgent";
-  }
+  }*/
 }
