@@ -47,7 +47,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
 
   public MctsAgent(double exploitationConstant, Logger log) {
     super(log);
-    this.exploitationConstant = exploitationConstant;
+    this.exploitationConstant = (1 + Math.sqrt(5))/2;
     mcTree = new DoubleLinkedTree<>();
     instanceNr = INSTANCE_NR_COUNTER++;
   }
@@ -152,7 +152,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
         .getPreviousAction();
   }
 
-  private boolean sortPromisingCandidates(Tree<McGameNode<A>> tree,
+  protected boolean sortPromisingCandidates(Tree<McGameNode<A>> tree,
       Comparator<McGameNode<A>> comparator) {
     boolean isDetermined = true;
     while (!tree.isLeaf() && isDetermined) {
@@ -169,7 +169,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
   }
 
 
-  private Tree<McGameNode<A>> mcSelection(Tree<McGameNode<A>> tree) {
+  protected Tree<McGameNode<A>> mcSelection(Tree<McGameNode<A>> tree) {
     int depth = 0;
     while (!tree.isLeaf() && (depth++ % 31 != 0 || !shouldStopComputation())) {
       List<Tree<McGameNode<A>>> children = new ArrayList<>(tree.getChildren());
@@ -188,7 +188,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
     return tree;
   }
 
-  private void mcExpansion(Tree<McGameNode<A>> tree) {
+  protected void mcExpansion(Tree<McGameNode<A>> tree) {
     if (tree.isLeaf()) {
       Game<A, ?> game = tree.getNode().getGame();
       Set<A> possibleActions = game.getPossibleActions();
@@ -198,7 +198,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
     }
   }
 
-  private boolean mcSimulation(Tree<McGameNode<A>> tree, int simulationsAtLeast, int proportion) {
+  protected boolean mcSimulation(Tree<McGameNode<A>> tree, int simulationsAtLeast, int proportion) {
     int simulationsDone = tree.getNode().getPlays();
     if (simulationsDone < simulationsAtLeast && shouldStopComputation(proportion)) {
       int simulationsLeft = simulationsAtLeast - simulationsDone;
@@ -210,7 +210,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
     return mcSimulation(tree);
   }
 
-  private boolean mcSimulation(Tree<McGameNode<A>> tree) {
+  protected boolean mcSimulation(Tree<McGameNode<A>> tree) {
     Game<A, ?> game = tree.getNode().getGame();
 
     int depth = 0;
@@ -227,7 +227,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
     return mcHasWon(game);
   }
 
-  private boolean mcSimulation(Tree<McGameNode<A>> tree, long timeout) {
+  protected boolean mcSimulation(Tree<McGameNode<A>> tree, long timeout) {
     long startTime = System.nanoTime();
     Game<A, ?> game = tree.getNode().getGame();
 
@@ -246,7 +246,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
     return mcHasWon(game);
   }
 
-  private boolean mcHasWon(Game<A, ?> game) {
+  protected  boolean mcHasWon(Game<A, ?> game) {
     double[] evaluation = game.getGameUtilityValue();
     double score = Util.scoreOutOfUtility(evaluation, playerId);
     if (!game.isGameOver() && score > 0) {
@@ -263,7 +263,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
   }
 
 
-  private void mcBackPropagation(Tree<McGameNode<A>> tree, boolean win) {
+  protected void mcBackPropagation(Tree<McGameNode<A>> tree, boolean win) {
     int depth = 0;
     while (!tree.isRoot() && (depth++ % 31 != 0 || !shouldStopComputation())) {
       tree = tree.getParent();
@@ -274,7 +274,7 @@ public class MctsAgent<G extends Game<A, ?>, A> extends AbstractGameAgent<G, A> 
     }
   }
 
-  private double upperConfidenceBound(Tree<McGameNode<A>> tree, double c) {
+  protected double upperConfidenceBound(Tree<McGameNode<A>> tree, double c) {
     double w = tree.getNode().getWins();
     double n = Math.max(tree.getNode().getPlays(), 1);
     double N = n;
