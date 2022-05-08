@@ -4,15 +4,18 @@ import at.ac.tuwien.ifs.sge.agent.AbstractGameAgent;
 import at.ac.tuwien.ifs.sge.agent.GameAgent;
 import at.ac.tuwien.ifs.sge.agent.mctsagent.McGameNode;
 import at.ac.tuwien.ifs.sge.engine.Logger;
-import at.ac.tuwien.ifs.sge.game.Game;
 import at.ac.tuwien.ifs.sge.game.risk.board.Risk;
 import at.ac.tuwien.ifs.sge.game.risk.board.RiskAction;
+import at.ac.tuwien.ifs.sge.game.risk.board.RiskBoard;
+import at.ac.tuwien.ifs.sge.game.risk.board.RiskTerritory;
+import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskTerritoryConfiguration;
 import at.ac.tuwien.ifs.sge.util.Util;
 import at.ac.tuwien.ifs.sge.util.tree.DoubleLinkedTree;
 import at.ac.tuwien.ifs.sge.util.tree.Tree;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> implements
 		GameAgent<Risk, RiskAction> {
@@ -22,6 +25,20 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	private static int INSTANCE_NR_COUNTER = 1;
 
 	private final int instanceNr;
+
+
+	private static Set<RiskTerritoryConfiguration> AUSTRALIA_TERRITORIES_CONFIG = Set.of(
+			RiskTerritoryConfiguration.EASTERN_AUSTRALIA,
+			RiskTerritoryConfiguration.WESTERN_AUSTRALIA,
+			RiskTerritoryConfiguration.INDONESIA,
+			RiskTerritoryConfiguration.NEW_GUINEA);
+
+	private static Set<Integer> AUSTRALIA_TERRITORIES_IDS = AUSTRALIA_TERRITORIES_CONFIG.stream().
+			map(RiskTerritoryConfiguration::getTerritoryId).collect(Collectors.toSet());
+
+	private static Set<RiskTerritory> AUSTRALIA_TERRITORIES = AUSTRALIA_TERRITORIES_CONFIG.stream().
+			map(RiskTerritoryConfiguration::getTerritory).collect(Collectors.toSet());
+
 
 	private final double exploitationConstant;
 	private Comparator<Tree<McGameNode<RiskAction>>> gameMcTreeUCTComparator;
@@ -47,7 +64,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 	public AustraliaFirstAgent(double exploitationConstant, Logger log) {
 		super(log);
-		this.exploitationConstant = (1 + Math.sqrt(5))/2;
+		this.exploitationConstant = (1 + Math.sqrt(5)) / 2;
 		mcTree = new DoubleLinkedTree<>();
 		instanceNr = INSTANCE_NR_COUNTER++;
 	}
@@ -83,7 +100,6 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 	@Override
 	public RiskAction computeNextAction(Risk game, long computationTime, TimeUnit timeUnit) {
-
 		super.setTimers(computationTime, timeUnit);
 
 		log.tra_("Searching for root of tree");
@@ -191,13 +207,22 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	protected void mcExpansion(Tree<McGameNode<RiskAction>> tree) {
 		if (tree.isLeaf()) {
 			Risk game = (Risk) tree.getNode().getGame();
+
+			RiskBoard board = game.getBoard();
+			Set<Integer> occupiedTerritory = board.getTerritoriesOccupiedByPlayer(playerId);
+
 			Set<RiskAction> possibleActions = game.getPossibleActions();
+
+			possibleActions = possibleActions.stream().filter(a ->
+					AUSTRALIA_TERRITORIES_IDS.contains(a.selected()) &&
+							!hasOccupiedTerritories(occupiedTerritory, a.selected())).collect(Collectors.toSet());
+
+
 			for (RiskAction possibleAction : possibleActions) {
 				tree.add(new McGameNode<>(game, possibleAction));
 			}
 		}
 	}
-
 	protected boolean mcSimulation(Tree<McGameNode<RiskAction>> tree, int simulationsAtLeast, int proportion) {
 		int simulationsDone = tree.getNode().getPlays();
 		if (simulationsDone < simulationsAtLeast && shouldStopComputation(proportion)) {
@@ -246,7 +271,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		return mcHasWon(game);
 	}
 
-	protected  boolean mcHasWon(Risk game) {
+	protected boolean mcHasWon(Risk game) {
 		double[] evaluation = game.getGameUtilityValue();
 		double score = Util.scoreOutOfUtility(evaluation, playerId);
 		if (!game.isGameOver() && score > 0) {
@@ -284,6 +309,19 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 		return (w / n) + c * Math.sqrt(Math.log(N) / n);
 	}
+
+	private  boolean hasOccupiedTerritories(Set<Integer> occupiedTerritories, Integer... territoryIds){
+		return hasOccupiedTerritories(occupiedTerritories, Arrays.asList(territoryIds));
+	}
+
+	private boolean hasOccupiedTerritories(Set<Integer> occupiedTerritories, Collection<Integer> territoryIds){
+		return occupiedTerritories.containsAll(territoryIds);
+	}
+
+	private boolean hasOccupiedAustralia(Set<Integer> occupiedTerritories){
+		return hasOccupiedTerritories(occupiedTerritories, AUSTRALIA_TERRITORIES_IDS);
+	}
+
 
 	@Override
 	public String toString() {
