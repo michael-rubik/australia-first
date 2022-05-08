@@ -209,20 +209,49 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 			Risk game = (Risk) tree.getNode().getGame();
 
 			RiskBoard board = game.getBoard();
-			Set<Integer> occupiedTerritory = board.getTerritoriesOccupiedByPlayer(playerId);
+			Set<Integer> occupiedTerritories = board.getTerritoriesOccupiedByPlayer(playerId);
 
 			Set<RiskAction> possibleActions = game.getPossibleActions();
 
-			possibleActions = possibleActions.stream().filter(a ->
-					AUSTRALIA_TERRITORIES_IDS.contains(a.selected()) &&
-							!hasOccupiedTerritories(occupiedTerritory, a.selected())).collect(Collectors.toSet());
+			if(!hasOccupiedAustralia(occupiedTerritories)) {
+				possibleActions = reconquerAustralia(possibleActions, occupiedTerritories);
+			} else {
+				possibleActions = useMaximumTroops(possibleActions);
+			}
 
+			int i = 0;
 
 			for (RiskAction possibleAction : possibleActions) {
 				tree.add(new McGameNode<>(game, possibleAction));
 			}
 		}
 	}
+
+	private Set<RiskAction> useMaximumTroops(Set<RiskAction> possibleActions) {
+		int max = 0;
+
+		for(RiskAction action : possibleActions) {
+			if (action.troops() >= 0){
+				max = action.troops();
+			}
+		}
+		final int maximum = max;
+
+		possibleActions = possibleActions.stream().filter(a ->
+				a.troops() == maximum).collect(Collectors.toSet());
+
+		return possibleActions;
+	}
+
+	private Set<RiskAction> reconquerAustralia(Set<RiskAction> possibleActions, Set<Integer> occupiedTerritories) {
+
+		possibleActions = possibleActions.stream().filter(a ->
+				AUSTRALIA_TERRITORIES_IDS.contains(a.selected()) ||
+						hasOccupiedAustralia(occupiedTerritories)).collect(Collectors.toSet());
+
+		return possibleActions;
+	}
+
 	protected boolean mcSimulation(Tree<McGameNode<RiskAction>> tree, int simulationsAtLeast, int proportion) {
 		int simulationsDone = tree.getNode().getPlays();
 		if (simulationsDone < simulationsAtLeast && shouldStopComputation(proportion)) {
