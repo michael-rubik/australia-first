@@ -20,16 +20,16 @@ dependencies {
     implementation 'junit:junit:4.13.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
-    compile group: 'at.ac.tuwien.ifs.sge', name: 'sge', version: '1.0.1'
-    compile group: 'at.ac.tuwien.ifs.sge', name: 'sge-risk', version: '1.0.1'
+    compile group: 'at.ac.tuwien.ifs.sge', name: 'sge', version: '1.0.2'
+    compile group: 'at.ac.tuwien.ifs.sge', name: 'sge-risk', version: '1.0.2'
 
 }
 
 jar {
     manifest {
         attributes 'Sge-Type': 'agent'
-        attributes 'Agent-Class': 'at.ac.tuwien.ifs.sge.agent.risk.RiskAgent'
-        attributes 'Agent-Name': 'RiskAgent'
+        attributes 'Agent-Class': 'at.ac.tuwien.ifs.sge.agent.risk.AustraliaFirstAgent'
+        attributes 'Agent-Name': 'AustraliaFirstAgent'
     }
 }
 
