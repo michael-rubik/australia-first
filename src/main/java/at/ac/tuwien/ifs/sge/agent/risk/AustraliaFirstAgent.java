@@ -2,7 +2,6 @@ package at.ac.tuwien.ifs.sge.agent.risk;
 
 import at.ac.tuwien.ifs.sge.agent.AbstractGameAgent;
 import at.ac.tuwien.ifs.sge.agent.GameAgent;
-import at.ac.tuwien.ifs.sge.agent.mctsagent.McGameNode;
 import at.ac.tuwien.ifs.sge.engine.Logger;
 import at.ac.tuwien.ifs.sge.game.risk.board.Risk;
 import at.ac.tuwien.ifs.sge.game.risk.board.RiskAction;
@@ -41,18 +40,18 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 
 	private final double exploitationConstant;
-	private Comparator<Tree<McGameNode<RiskAction>>> gameMcTreeUCTComparator;
-	private Comparator<Tree<McGameNode<RiskAction>>> gameMcTreeSelectionComparator;
-	private Comparator<Tree<McGameNode<RiskAction>>> gameMcTreePlayComparator;
-	private Comparator<McGameNode<RiskAction>> gameMcNodePlayComparator;
-	private Comparator<Tree<McGameNode<RiskAction>>> gameMcTreeWinComparator;
-	private Comparator<McGameNode<RiskAction>> gameMcNodeWinComparator;
-	private Comparator<Tree<McGameNode<RiskAction>>> gameMcTreeMoveComparator;
-	private Comparator<McGameNode<RiskAction>> gameMcNodeMoveComparator;
-	private Comparator<McGameNode<RiskAction>> gameMcNodeGameComparator;
-	private Comparator<Tree<McGameNode<RiskAction>>> gameMcTreeGameComparator;
+	private Comparator<Tree<RiskGameNode<RiskAction>>> gameMcTreeUCTComparator;
+	private Comparator<Tree<RiskGameNode<RiskAction>>> gameMcTreeSelectionComparator;
+	private Comparator<Tree<RiskGameNode<RiskAction>>> gameMcTreePlayComparator;
+	private Comparator<RiskGameNode<RiskAction>> gameMcNodePlayComparator;
+	private Comparator<Tree<RiskGameNode<RiskAction>>> gameMcTreeWinComparator;
+	private Comparator<RiskGameNode<RiskAction>> gameMcNodeWinComparator;
+	private Comparator<Tree<RiskGameNode<RiskAction>>> gameMcTreeMoveComparator;
+	private Comparator<RiskGameNode<RiskAction>> gameMcNodeMoveComparator;
+	private Comparator<RiskGameNode<RiskAction>> gameMcNodeGameComparator;
+	private Comparator<Tree<RiskGameNode<RiskAction>>> gameMcTreeGameComparator;
 
-	private Tree<McGameNode<RiskAction>> mcTree;
+	private Tree<RiskGameNode<RiskAction>> mcTree;
 
 	public AustraliaFirstAgent() {
 		this(null);
@@ -73,16 +72,16 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	public void setUp(int numberOfPlayers, int playerId) {
 		super.setUp(numberOfPlayers, playerId);
 		mcTree.clear();
-		mcTree.setNode(new McGameNode<>());
+		mcTree.setNode(new RiskGameNode());
 
 		gameMcTreeUCTComparator = Comparator
 				.comparingDouble(t -> upperConfidenceBound(t, exploitationConstant));
 
-		gameMcNodePlayComparator = Comparator.comparingInt(McGameNode::getPlays);
+		gameMcNodePlayComparator = Comparator.comparingInt(RiskGameNode::getPlays);
 		gameMcTreePlayComparator = (o1, o2) -> gameMcNodePlayComparator
 				.compare(o1.getNode(), o2.getNode());
 
-		gameMcNodeWinComparator = Comparator.comparingInt(McGameNode::getWins);
+		gameMcNodeWinComparator = Comparator.comparingInt(RiskGameNode::getWins);
 		gameMcTreeWinComparator = (o1, o2) -> gameMcNodeWinComparator
 				.compare(o1.getNode(), o2.getNode());
 
@@ -132,7 +131,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 				log.debf_("MCTS with %d simulations at confidence %.1f%%", mcTree.getNode().getPlays(),
 						Util.percentage(mcTree.getNode().getWins(), mcTree.getNode().getPlays()));
 			}
-			Tree<McGameNode<RiskAction>> tree = mcTree;
+			Tree<RiskGameNode<RiskAction>> tree = mcTree;
 
 			tree = mcSelection(tree);
 			mcExpansion(tree);
@@ -168,8 +167,8 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 				.getPreviousAction();
 	}
 
-	protected boolean sortPromisingCandidates(Tree<McGameNode<RiskAction>> tree,
-	                                          Comparator<McGameNode<RiskAction>> comparator) {
+	protected boolean sortPromisingCandidates(Tree<RiskGameNode<RiskAction>> tree,
+	                                          Comparator<RiskGameNode<RiskAction>> comparator) {
 		boolean isDetermined = true;
 		while (!tree.isLeaf() && isDetermined) {
 			isDetermined = tree.getChildren().stream()
@@ -185,13 +184,13 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	}
 
 
-	protected Tree<McGameNode<RiskAction>> mcSelection(Tree<McGameNode<RiskAction>> tree) {
+	protected Tree<RiskGameNode<RiskAction>> mcSelection(Tree<RiskGameNode<RiskAction>> tree) {
 		int depth = 0;
 		while (!tree.isLeaf() && (depth++ % 31 != 0 || !shouldStopComputation())) {
-			List<Tree<McGameNode<RiskAction>>> children = new ArrayList<>(tree.getChildren());
+			List<Tree<RiskGameNode<RiskAction>>> children = new ArrayList<>(tree.getChildren());
 			if (tree.getNode().getGame().getCurrentPlayer() < 0) {
 				RiskAction action = tree.getNode().getGame().determineNextAction();
-				for (Tree<McGameNode<RiskAction>> child : children) {
+				for (Tree<RiskGameNode<RiskAction>> child : children) {
 					if (child.getNode().getGame().getPreviousAction().equals(action)) {
 						tree = child;
 						break;
@@ -204,7 +203,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		return tree;
 	}
 
-	protected void mcExpansion(Tree<McGameNode<RiskAction>> tree) {
+	protected void mcExpansion(Tree<RiskGameNode<RiskAction>> tree) {
 		if (tree.isLeaf()) {
 			Risk game = (Risk) tree.getNode().getGame();
 
@@ -222,7 +221,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 			int i = 0;
 
 			for (RiskAction possibleAction : possibleActions) {
-				tree.add(new McGameNode<>(game, possibleAction));
+				tree.add(new RiskGameNode<>(game, possibleAction));
 			}
 		}
 	}
@@ -252,7 +251,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		return possibleActions;
 	}
 
-	protected boolean mcSimulation(Tree<McGameNode<RiskAction>> tree, int simulationsAtLeast, int proportion) {
+	protected boolean mcSimulation(Tree<RiskGameNode<RiskAction>> tree, int simulationsAtLeast, int proportion) {
 		int simulationsDone = tree.getNode().getPlays();
 		if (simulationsDone < simulationsAtLeast && shouldStopComputation(proportion)) {
 			int simulationsLeft = simulationsAtLeast - simulationsDone;
@@ -264,7 +263,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		return mcSimulation(tree);
 	}
 
-	protected boolean mcSimulation(Tree<McGameNode<RiskAction>> tree) {
+	protected boolean mcSimulation(Tree<RiskGameNode<RiskAction>> tree) {
 		Risk game = (Risk) tree.getNode().getGame();
 
 		int depth = 0;
@@ -281,7 +280,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		return mcHasWon(game);
 	}
 
-	protected boolean mcSimulation(Tree<McGameNode<RiskAction>> tree, long timeout) {
+	protected boolean mcSimulation(Tree<RiskGameNode<RiskAction>> tree, long timeout) {
 		long startTime = System.nanoTime();
 		Risk game = (Risk) tree.getNode().getGame();
 
@@ -317,7 +316,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	}
 
 
-	protected void mcBackPropagation(Tree<McGameNode<RiskAction>> tree, boolean win) {
+	protected void mcBackPropagation(Tree<RiskGameNode<RiskAction>> tree, boolean win) {
 		int depth = 0;
 		while (!tree.isRoot() && (depth++ % 31 != 0 || !shouldStopComputation())) {
 			tree = tree.getParent();
@@ -328,7 +327,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		}
 	}
 
-	protected double upperConfidenceBound(Tree<McGameNode<RiskAction>> tree, double c) {
+	protected double upperConfidenceBound(Tree<RiskGameNode<RiskAction>> tree, double c) {
 		double w = tree.getNode().getWins();
 		double n = Math.max(tree.getNode().getPlays(), 1);
 		double N = n;
