@@ -272,12 +272,17 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 			if (game.getCurrentPlayer() < 0) {
 				game = (Risk) game.doAction();
 			} else {
-				game = (Risk) game.doAction(Util.selectRandom(game.getPossibleActions(), random));
+				RiskAction action = getNewAction(game);
+				game = (Risk) game.doAction(action);
 			}
 
 		}
 
 		return mcHasWon(game);
+	}
+
+	private RiskAction getNewAction(Risk game) {
+		return Util.selectRandom(game.getPossibleActions(), random);
 	}
 
 	protected boolean mcSimulation(Tree<RiskGameNode<RiskAction>> tree, long timeout) {
