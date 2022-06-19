@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static at.ac.tuwien.ifs.sge.agent.risk.TerritoryConstants.*;
+
 public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> implements
 		GameAgent<Risk, RiskAction> {
 
@@ -24,46 +26,6 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	private static int INSTANCE_NR_COUNTER = 1;
 
 	private final int instanceNr;
-
-
-	private static Set<RiskTerritoryConfiguration> AUSTRALIA_TERRITORIES_CONFIG = Set.of(
-			RiskTerritoryConfiguration.EASTERN_AUSTRALIA,
-			RiskTerritoryConfiguration.WESTERN_AUSTRALIA,
-			RiskTerritoryConfiguration.INDONESIA,
-			RiskTerritoryConfiguration.NEW_GUINEA);
-
-	private static Set<Integer> AUSTRALIA_TERRITORIES_IDS = AUSTRALIA_TERRITORIES_CONFIG.stream().
-			map(RiskTerritoryConfiguration::getTerritoryId).collect(Collectors.toSet());
-
-	private static Set<RiskTerritory> AUSTRALIA_TERRITORIES = AUSTRALIA_TERRITORIES_CONFIG.stream().
-			map(RiskTerritoryConfiguration::getTerritory).collect(Collectors.toSet());
-
-	private static Set<RiskTerritoryConfiguration> SOUTH_AMERICA_TERRITORIES_CONFIG = Set.of(
-			RiskTerritoryConfiguration.ARGENTINA,
-			RiskTerritoryConfiguration.BRAZIL,
-			RiskTerritoryConfiguration.PERU,
-			RiskTerritoryConfiguration.VENEZUELA);
-
-	private static Set<Integer> SOUTH_AMERICA_TERRITORIES_IDS = SOUTH_AMERICA_TERRITORIES_CONFIG.stream().
-			map(RiskTerritoryConfiguration::getTerritoryId).collect(Collectors.toSet());
-
-	private static Set<RiskTerritory> SOUTH_AMERICA_TERRITORIES = SOUTH_AMERICA_TERRITORIES_CONFIG.stream().
-			map(RiskTerritoryConfiguration::getTerritory).collect(Collectors.toSet());
-
-	private static Set<RiskTerritoryConfiguration> AFRICA_TERRITORIES_CONFIG = Set.of(
-			RiskTerritoryConfiguration.CENTRAL_AFRICA,
-			RiskTerritoryConfiguration.EAST_AFRICA,
-			RiskTerritoryConfiguration.EGYPT,
-			RiskTerritoryConfiguration.NORTH_AFRICA,
-			RiskTerritoryConfiguration.SOUTH_AFRICA,
-			RiskTerritoryConfiguration.MADAGASCAR);
-
-	private static Set<Integer> AFRICA_TERRITORIES_IDS = AFRICA_TERRITORIES_CONFIG.stream().
-			map(RiskTerritoryConfiguration::getTerritoryId).collect(Collectors.toSet());
-
-	private static Set<RiskTerritory> AFRICA_TERRITORIES = AFRICA_TERRITORIES_CONFIG.stream().
-			map(RiskTerritoryConfiguration::getTerritory).collect(Collectors.toSet());
-
 
 
 	private final double exploitationConstant;
@@ -246,23 +208,44 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 			if (isInitialPhase || !hasOccupiedAustralia(occupiedTerritories)) {
 				possibleActions = reconquerAustralia(possibleActions);
-			} else {
-				possibleActions = useMaximumTroops(possibleActions);
+			} else if (game.getBoard().isAttackPhase()) {
+				possibleActions = useMaximumTroops(game, possibleActions);
+			} else if (game.getBoard().isFortifyPhase() || game.getBoard().isReinforcementPhase()) {
+				possibleActions = removeSecuredTerritories(game, possibleActions);
+				possibleActions = removeInsufficientTroops(game, possibleActions);
 			}
-
 
 
 			int i = 0;
 
 			for (RiskAction possibleAction : possibleActions) {
 				//todo wie lange halte ich kontinente hinzufügen
-
 				tree.add(new RiskGameNode<>(game, possibleAction));
 			}
 		}
 	}
 
-	private Set<RiskAction> useMaximumTroops(Set<RiskAction> possibleActions) {
+	private Set<RiskAction> removeInsufficientTroops(Risk game, Set<RiskAction> possibleActions) {
+		if (game.getBoard().isReinforcementPhase()) {
+			int max = possibleActions.stream().map(RiskAction::troops).max(Comparator.naturalOrder()).get();
+			return possibleActions.stream().filter(riskAction -> riskAction.troops() == max).collect(Collectors.toSet());
+		} else {
+			return possibleActions.stream().
+					filter(action -> game.getBoard().neighboringEnemyTerritories(action.defendingId()).isEmpty()).
+					filter(riskAction -> game.getBoard().neighboringEnemyTerritories(riskAction.attackingId()).isEmpty())
+			.collect(Collectors.toSet());
+		}
+	}
+
+	private Set<RiskAction> removeSecuredTerritories(Risk game, Set<RiskAction> possibleActions) {
+		return possibleActions.stream().
+				filter(action ->
+						!game.getBoard().neighboringEnemyTerritories(action.fortifiedId()).isEmpty()).
+				collect(Collectors.toSet());
+
+	}
+
+	private Set<RiskAction> useMaximumTroops(Risk game, Set<RiskAction> possibleActions) {
 		//todo nur wenn würfelvorteil besteht
 		int max = 0;
 
@@ -273,8 +256,13 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		}
 		final int maximum = max;
 
-		possibleActions = possibleActions.stream().filter(a ->
-				a.troops() == maximum).collect(Collectors.toSet());
+		possibleActions = possibleActions.stream().filter(a -> {
+
+			double defendingTroops = game.getBoard().getTerritoryTroops(a.defendingId());
+			double attackingTroops = a.troops();
+			if (attackingTroops == maximum) return attackingTroops >= defendingTroops * 1.5;
+			return false;
+		}).collect(Collectors.toSet());
 
 		return possibleActions;
 	}
@@ -289,18 +277,20 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		}
 		return australiaActions;
 	}
+
 	private Set<RiskAction> reconquerSiam(Set<RiskAction> possibleActions) {
 		Set<RiskAction> siamActions = possibleActions.stream().filter(a ->
-				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
+				SIAM_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
 
 		if (siamActions.isEmpty()) {
 			return reconquerSouthAmerica(possibleActions);
 		}
 		return siamActions;
 	}
+
 	private Set<RiskAction> reconquerSouthAmerica(Set<RiskAction> possibleActions) {
 		Set<RiskAction> southAmerica = possibleActions.stream().filter(a ->
-				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
+				SOUTH_AMERICA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
 
 		if (southAmerica.isEmpty()) {
 			return reconquerAfrica(possibleActions);
@@ -310,7 +300,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 	private Set<RiskAction> reconquerAfrica(Set<RiskAction> possibleActions) {
 		Set<RiskAction> africaActions = possibleActions.stream().filter(a ->
-				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
+				AFRICA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
 
 		if (africaActions.isEmpty()) {
 			return possibleActions;
