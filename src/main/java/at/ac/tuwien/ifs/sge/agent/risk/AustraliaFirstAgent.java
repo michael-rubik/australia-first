@@ -204,8 +204,9 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	}
 
 	protected void mcExpansion(Tree<RiskGameNode<RiskAction>> tree) {
+		RiskGameNode<RiskAction> currNode = tree.getNode();
 		if (tree.isLeaf()) {
-			Risk game = (Risk) tree.getNode().getGame();
+			Risk game = (Risk) currNode.getGame();
 
 			RiskBoard board = game.getBoard();
 			Set<Integer> occupiedTerritories = board.getTerritoriesOccupiedByPlayer(playerId);
@@ -213,7 +214,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 			Set<RiskAction> possibleActions = game.getPossibleActions();
 
 			if(!hasOccupiedAustralia(occupiedTerritories)) {
-				possibleActions = reconquerAustralia(possibleActions, occupiedTerritories);
+				possibleActions = reconquerAustralia(possibleActions);
 			} else {
 				possibleActions = useMaximumTroops(possibleActions);
 			}
@@ -221,12 +222,15 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 			int i = 0;
 
 			for (RiskAction possibleAction : possibleActions) {
+				//todo wie lange halte ich kontinente hinzufügen
+
 				tree.add(new RiskGameNode<>(game, possibleAction));
 			}
 		}
 	}
 
 	private Set<RiskAction> useMaximumTroops(Set<RiskAction> possibleActions) {
+		//todo nur wenn würfelvorteil besteht
 		int max = 0;
 
 		for(RiskAction action : possibleActions) {
@@ -242,13 +246,15 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		return possibleActions;
 	}
 
-	private Set<RiskAction> reconquerAustralia(Set<RiskAction> possibleActions, Set<Integer> occupiedTerritories) {
+	private Set<RiskAction> reconquerAustralia(Set<RiskAction> possibleActions) {
+		//todo erweitern auf andere Continente
+		Set<RiskAction> australiaActions = possibleActions.stream().filter(a ->
+				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
 
-		possibleActions = possibleActions.stream().filter(a ->
-				AUSTRALIA_TERRITORIES_IDS.contains(a.selected()) ||
-						hasOccupiedAustralia(occupiedTerritories)).collect(Collectors.toSet());
-
-		return possibleActions;
+		if (australiaActions.isEmpty()) {
+			return possibleActions;
+		}
+		return australiaActions;
 	}
 
 	protected boolean mcSimulation(Tree<RiskGameNode<RiskAction>> tree, int simulationsAtLeast, int proportion) {
