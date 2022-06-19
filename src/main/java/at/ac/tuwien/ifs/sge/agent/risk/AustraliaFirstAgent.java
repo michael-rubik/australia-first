@@ -53,6 +53,8 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 	private Tree<RiskGameNode<RiskAction>> mcTree;
 
+	private boolean isInitialPhase = true;
+
 	public AustraliaFirstAgent() {
 		this(null);
 	}
@@ -100,7 +102,6 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	@Override
 	public RiskAction computeNextAction(Risk game, long computationTime, TimeUnit timeUnit) {
 		super.setTimers(computationTime, timeUnit);
-
 		log.tra_("Searching for root of tree");
 		boolean foundRoot = Util.findRoot(mcTree, game);
 		if (foundRoot) {
@@ -123,6 +124,9 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 				Util.percentage(mcTree.getNode().getWins(), mcTree.getNode().getPlays()));
 
 		int printThreshold = 1;
+		if (!game.getBoard().isReinforcementPhase()) {
+			isInitialPhase = false;
+		}
 
 		while (!shouldStopComputation()) {
 
@@ -213,11 +217,13 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 			Set<RiskAction> possibleActions = game.getPossibleActions();
 
-			if(!hasOccupiedAustralia(occupiedTerritories)) {
+			if (isInitialPhase || !hasOccupiedAustralia(occupiedTerritories)) {
 				possibleActions = reconquerAustralia(possibleActions);
 			} else {
 				possibleActions = useMaximumTroops(possibleActions);
 			}
+
+
 
 			int i = 0;
 
@@ -233,8 +239,8 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		//todo nur wenn würfelvorteil besteht
 		int max = 0;
 
-		for(RiskAction action : possibleActions) {
-			if (action.troops() >= 0){
+		for (RiskAction action : possibleActions) {
+			if (action.troops() >= 0) {
 				max = action.troops();
 			}
 		}
@@ -252,9 +258,37 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
 
 		if (australiaActions.isEmpty()) {
-			return possibleActions;
+			return reconquerSiam(possibleActions);
 		}
 		return australiaActions;
+	}
+	private Set<RiskAction> reconquerSiam(Set<RiskAction> possibleActions) {
+		Set<RiskAction> siamActions = possibleActions.stream().filter(a ->
+				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
+
+		if (siamActions.isEmpty()) {
+			return reconquerSouthAmerica(possibleActions);
+		}
+		return siamActions;
+	}
+	private Set<RiskAction> reconquerSouthAmerica(Set<RiskAction> possibleActions) {
+		Set<RiskAction> southAmerica = possibleActions.stream().filter(a ->
+				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
+
+		if (southAmerica.isEmpty()) {
+			return reconquerAfrica(possibleActions);
+		}
+		return southAmerica;
+	}
+
+	private Set<RiskAction> reconquerAfrica(Set<RiskAction> possibleActions) {
+		Set<RiskAction> africaActions = possibleActions.stream().filter(a ->
+				AUSTRALIA_TERRITORIES_IDS.contains(a.selected())).collect(Collectors.toSet());
+
+		if (africaActions.isEmpty()) {
+			return possibleActions;
+		}
+		return africaActions;
 	}
 
 	protected boolean mcSimulation(Tree<RiskGameNode<RiskAction>> tree, int simulationsAtLeast, int proportion) {
@@ -349,15 +383,15 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		return (w / n) + c * Math.sqrt(Math.log(N) / n);
 	}
 
-	private  boolean hasOccupiedTerritories(Set<Integer> occupiedTerritories, Integer... territoryIds){
+	private boolean hasOccupiedTerritories(Set<Integer> occupiedTerritories, Integer... territoryIds) {
 		return hasOccupiedTerritories(occupiedTerritories, Arrays.asList(territoryIds));
 	}
 
-	private boolean hasOccupiedTerritories(Set<Integer> occupiedTerritories, Collection<Integer> territoryIds){
+	private boolean hasOccupiedTerritories(Set<Integer> occupiedTerritories, Collection<Integer> territoryIds) {
 		return occupiedTerritories.containsAll(territoryIds);
 	}
 
-	private boolean hasOccupiedAustralia(Set<Integer> occupiedTerritories){
+	private boolean hasOccupiedAustralia(Set<Integer> occupiedTerritories) {
 		return hasOccupiedTerritories(occupiedTerritories, AUSTRALIA_TERRITORIES_IDS);
 	}
 
