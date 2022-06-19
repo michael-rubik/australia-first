@@ -206,13 +206,14 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 			Set<RiskAction> possibleActions = game.getPossibleActions();
 
-			if (isInitialPhase || !hasOccupiedAustralia(occupiedTerritories)) {
+			if (isInitialPhase && !hasOccupiedAustralia(occupiedTerritories)) {
 				possibleActions = reconquerAustralia(possibleActions);
 			} else if (game.getBoard().isAttackPhase()) {
 				possibleActions = useMaximumTroops(game, possibleActions);
 			} else if (game.getBoard().isFortifyPhase() || game.getBoard().isReinforcementPhase()) {
 				possibleActions = removeSecuredTerritories(game, possibleActions);
 				possibleActions = removeInsufficientTroops(game, possibleActions);
+				possibleActions = stackTroops(game, possibleActions);
 			}
 
 
@@ -223,6 +224,23 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 				tree.add(new RiskGameNode<>(game, possibleAction));
 			}
 		}
+	}
+
+	private Set<RiskAction> stackTroops(Risk game, Set<RiskAction> possibleActions) {
+		int maxStack = 0;
+		int maxDest = 0;
+		for(RiskAction action: possibleActions){
+			int dest = action.fortifiedId();
+			int troops =game.getBoard().getTerritoryTroops(dest);
+			if(maxStack < troops+action.troops() ){
+
+				maxStack = troops + action.troops();
+				maxDest = dest;
+			}
+		}
+
+		int finalMaxDest = maxDest;
+		return possibleActions.stream().filter(riskAction -> riskAction.fortifiedId() == finalMaxDest).collect(Collectors.toSet());
 	}
 
 	private Set<RiskAction> removeInsufficientTroops(Risk game, Set<RiskAction> possibleActions) {
