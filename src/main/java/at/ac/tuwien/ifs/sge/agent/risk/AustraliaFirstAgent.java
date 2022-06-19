@@ -206,8 +206,9 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 
 			Set<RiskAction> possibleActions = game.getPossibleActions();
 
-			if (isInitialPhase || !hasOccupiedAustralia(occupiedTerritories)) {
-				possibleActions = reconquerAustralia(possibleActions);
+			if (isInitialPhase && !hasOccupiedAustralia(occupiedTerritories)) {
+				Set<RiskAction> actions = reconquerAustralia(possibleActions);
+				possibleActions = actions;
 			} else if (game.getBoard().isAttackPhase()) {
 				possibleActions = useMaximumTroops(game, possibleActions);
 			} else if (game.getBoard().isFortifyPhase() || game.getBoard().isReinforcementPhase()) {
@@ -225,6 +226,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 		}
 	}
 
+
 	private Set<RiskAction> removeInsufficientTroops(Risk game, Set<RiskAction> possibleActions) {
 		if (game.getBoard().isReinforcementPhase()) {
 			int max = possibleActions.stream().map(RiskAction::troops).max(Comparator.naturalOrder()).get();
@@ -233,7 +235,7 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 			return possibleActions.stream().
 					filter(action -> game.getBoard().neighboringEnemyTerritories(action.defendingId()).isEmpty()).
 					filter(riskAction -> game.getBoard().neighboringEnemyTerritories(riskAction.attackingId()).isEmpty())
-			.collect(Collectors.toSet());
+					.collect(Collectors.toSet());
 		}
 	}
 
