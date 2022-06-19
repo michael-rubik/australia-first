@@ -38,6 +38,33 @@ public class AustraliaFirstAgent extends AbstractGameAgent<Risk, RiskAction> imp
 	private static Set<RiskTerritory> AUSTRALIA_TERRITORIES = AUSTRALIA_TERRITORIES_CONFIG.stream().
 			map(RiskTerritoryConfiguration::getTerritory).collect(Collectors.toSet());
 
+	private static Set<RiskTerritoryConfiguration> SOUTH_AMERICA_TERRITORIES_CONFIG = Set.of(
+			RiskTerritoryConfiguration.ARGENTINA,
+			RiskTerritoryConfiguration.BRAZIL,
+			RiskTerritoryConfiguration.PERU,
+			RiskTerritoryConfiguration.VENEZUELA);
+
+	private static Set<Integer> SOUTH_AMERICA_TERRITORIES_IDS = SOUTH_AMERICA_TERRITORIES_CONFIG.stream().
+			map(RiskTerritoryConfiguration::getTerritoryId).collect(Collectors.toSet());
+
+	private static Set<RiskTerritory> SOUTH_AMERICA_TERRITORIES = SOUTH_AMERICA_TERRITORIES_CONFIG.stream().
+			map(RiskTerritoryConfiguration::getTerritory).collect(Collectors.toSet());
+
+	private static Set<RiskTerritoryConfiguration> AFRICA_TERRITORIES_CONFIG = Set.of(
+			RiskTerritoryConfiguration.CENTRAL_AFRICA,
+			RiskTerritoryConfiguration.EAST_AFRICA,
+			RiskTerritoryConfiguration.EGYPT,
+			RiskTerritoryConfiguration.NORTH_AFRICA,
+			RiskTerritoryConfiguration.SOUTH_AFRICA,
+			RiskTerritoryConfiguration.MADAGASCAR);
+
+	private static Set<Integer> AFRICA_TERRITORIES_IDS = AFRICA_TERRITORIES_CONFIG.stream().
+			map(RiskTerritoryConfiguration::getTerritoryId).collect(Collectors.toSet());
+
+	private static Set<RiskTerritory> AFRICA_TERRITORIES = AFRICA_TERRITORIES_CONFIG.stream().
+			map(RiskTerritoryConfiguration::getTerritory).collect(Collectors.toSet());
+
+
 
 	private final double exploitationConstant;
 	private Comparator<Tree<RiskGameNode<RiskAction>>> gameMcTreeUCTComparator;
