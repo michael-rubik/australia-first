@@ -2,7 +2,13 @@ package at.ac.tuwien.ifs.sge.agent.risk;
 
 import at.ac.tuwien.ifs.sge.game.Game;
 import at.ac.tuwien.ifs.sge.game.risk.board.Risk;
+import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskContinentConfiguration;
+import at.ac.tuwien.ifs.sge.game.risk.configuration.RiskMissionConfiguration;
 import at.ac.tuwien.ifs.sge.util.node.GameNode;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class RiskGameNode<A> implements GameNode<A> {
@@ -10,6 +16,8 @@ public class RiskGameNode<A> implements GameNode<A> {
   private Risk game;
   private int wins;
   private int plays;
+
+  private Map<RiskContinentConfiguration, Integer> continents;
 
   public RiskGameNode() {
     this(null);
@@ -27,6 +35,12 @@ public class RiskGameNode<A> implements GameNode<A> {
     this.game = (Risk) game;
     this.wins = wins;
     this.plays = plays;
+
+    continents = new HashMap<>();
+    for (RiskContinentConfiguration continent:
+         RiskContinentConfiguration.allContinents) {
+      continents.put(continent, 0);
+    }
   }
 
 
